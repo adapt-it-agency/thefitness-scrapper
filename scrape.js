@@ -1,14 +1,24 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
 const cron = require('node-cron');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+
+// Configure AWS S3 client
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
+
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 
 const locations = [
     'branimir', 'dubrava', 'greengold', 'dvorana', 'hala', 'hob',
     'kaptol', 'mamutica', 'zcentar', 'zavrtnica', 'zonar'
 ];
 
-const scrapeAndClean = async (location) => {
+const scrapeAndUpload = async (location) => {
     const url = `https://${location}.thefitness.hr/calendar`;
     const baseUrl = `https://${location}.thefitness.hr`;
     const browser = await puppeteer.launch({ headless: true });
@@ -22,15 +32,35 @@ const scrapeAndClean = async (location) => {
                 event.remove();
             }
         });
-        
+
+        document.body.style.backgroundColor = 'black';
+
+        const innerContainer = document.getElementById('innercontainer');
+        if (innerContainer) {
+            const logoDiv = document.createElement('div');
+            const logo = document.createElement('img');
+            logo.src = 'https://www.formfactory.cz/timetable/the-fitness-logo.png';
+            logo.style.float = 'left';
+            logo.style.marginRight = '10px';
+            logo.style.marginBottom = '20px';
+            logo.style.width = '200px';
+            logo.style.height = 'auto';
+            logoDiv.appendChild(logo);
+            innerContainer.parentNode.insertBefore(logoDiv, innerContainer);
+        }
+
+        const calendarHeader = document.querySelector('section.calendar_header h1');
+        if (calendarHeader) calendarHeader.style.color = 'white';
+
+    
         const header = document.querySelector('header');
         if (header) header.remove();
 
         const mobileIcons = document.querySelector('.mobile-icons');
         if (mobileIcons) mobileIcons.remove();
 
-        const nav = document.querySelector('footer nav');
-        if (nav) nav.remove();
+        const footer = document.querySelector('footer');
+        if (footer) footer.remove();
 
         const calendarMain = document.querySelector('section.calendar_main');
         if (calendarMain) calendarMain.remove();
@@ -46,6 +76,7 @@ const scrapeAndClean = async (location) => {
                 script.setAttribute('src', baseUrl + script.getAttribute('src'));
             }
         });
+
         const head = document.querySelector('head');
         if (head) {
             const noCacheMetaTags = `
@@ -58,22 +89,31 @@ const scrapeAndClean = async (location) => {
         
         return document.documentElement.outerHTML;
     }, baseUrl);
-    const locationDir = path.join(__dirname, location);
-    if (!fs.existsSync(locationDir)) {
-        fs.mkdirSync(locationDir);
+
+    try {
+        // Upload to S3
+        const uploadParams = {
+            Bucket: BUCKET_NAME,
+            Key: `${location}/index.html`,
+            Body: cleanedHTML,
+            ContentType: 'text/html',
+            CacheControl: 'no-cache, no-store, must-revalidate',
+        };
+
+        await s3Client.send(new PutObjectCommand(uploadParams));
+        console.log(`Successfully uploaded HTML for ${location} to S3 ${BUCKET_NAME} at ${new Date().toISOString()}`);
+    } catch (err) {
+        console.error(`Date: ${new Date().toISOString()} Error uploading to S3 for ${location}:`, err);
     }
-    const outputPath = path.join(locationDir, 'index.html');
-    fs.writeFileSync(outputPath, cleanedHTML);
-    console.log(`HTML saved to ${outputPath}`);
 
     await browser.close();
 };
 
 // Schedule to run every 30 minutes
 cron.schedule('*/30 * * * *', () => {
-    console.log('Running scraper for all locations...');
-    locations.forEach(location => scrapeAndClean(location));
+    console.log(`Date: ${new Date().toISOString()} Running scraper for all locations...`);
+    locations.forEach(location => scrapeAndUpload(location));
 });
 
 // Run once on startup
-locations.forEach(location => scrapeAndClean(location));
+locations.forEach(location => scrapeAndUpload(location));
