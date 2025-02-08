@@ -22,12 +22,18 @@ const locations = [
 ];
 
 const scrapeAndUpload = async (location) => {
+    console.log(`[${new Date().toISOString()}] Starting process for ${location}`);
     const url = `https://${location}.thefitness.hr/calendar`;
     const baseUrl = `https://${location}.thefitness.hr`;
+    
+    console.log(`[${new Date().toISOString()}] Launching browser for ${location}`);
     const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
+    
+    console.log(`[${new Date().toISOString()}] Navigating to ${url}`);
     await page.goto(url, { waitUntil: 'networkidle2' });
-
+    
+    console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
     const cleanedHTML = await page.evaluate((baseUrl, videoUrl) => {
         document.querySelectorAll('div.event').forEach(event => {
             const eventName = event.querySelector('p.event_name');
@@ -148,9 +154,11 @@ const scrapeAndUpload = async (location) => {
         
         return document.documentElement.outerHTML;
     }, baseUrl, VIDEO_URL);
+    
+    console.log(`[${new Date().toISOString()}] HTML cleaning completed for ${location}`);
 
     try {
-        // Upload to S3
+        console.log(`[${new Date().toISOString()}] Preparing S3 upload for ${location}`);
         const uploadParams = {
             Bucket: BUCKET_NAME,
             Key: `${location}/index.html`,
@@ -159,20 +167,25 @@ const scrapeAndUpload = async (location) => {
             CacheControl: 'no-cache, no-store, must-revalidate',
         };
 
+        console.log(`[${new Date().toISOString()}] Starting S3 upload for ${location} to bucket ${BUCKET_NAME}`);
         await s3Client.send(new PutObjectCommand(uploadParams));
-        console.log(`Successfully uploaded HTML for ${location} to S3 ${BUCKET_NAME} at ${new Date().toISOString()}`);
+        console.log(`[${new Date().toISOString()}] ✅ Successfully uploaded HTML for ${location} to S3 ${BUCKET_NAME}`);
     } catch (err) {
-        console.error(`Date: ${new Date().toISOString()} Error uploading to S3 for ${location}:`, err);
+        console.error(`[${new Date().toISOString()}] ❌ Error uploading to S3 for ${location}:`, err);
     }
 
+    console.log(`[${new Date().toISOString()}] Closing browser for ${location}`);
     await browser.close();
+    console.log(`[${new Date().toISOString()}] Process completed for ${location}\n`);
 };
 
 // Schedule to run every 30 minutes
 cron.schedule('*/30 * * * *', () => {
-    console.log(`Date: ${new Date().toISOString()} Running scraper for all locations...`);
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for all ${locations.length} locations...`);
     locations.forEach(location => scrapeAndUpload(location));
 });
 
 // Run once on startup
+console.log(`[${new Date().toISOString()}] 🚀 Initial startup - processing ${locations.length} locations`);
 locations.forEach(location => scrapeAndUpload(location));
