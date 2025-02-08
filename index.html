@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Fitness - Raspored</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .locations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            width: 100%;
+        }
+        a {
+            display: block;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dobrodošli na The Fitness raspored</h1>
+        <div class="locations">
+            <a href="/branimir">Branimir</a>
+            <a href="/dubrava">Dubrava</a>
+            <a href="/greengold">Green Gold</a>
+            <a href="/dvorana">Dvorana</a>
+            <a href="/hala">Hala</a>
+            <a href="/hob">HOB</a>
+            <a href="/kaptol">Kaptol</a>
+            <a href="/mamutica">Mamutica</a>
+            <a href="/zcentar">Z Centar</a>
+            <a href="/zavrtnica">Zavrtnica</a>
+            <a href="/zonar">Zonar</a>
+        </div>
+    </div>
+</body>
+</html> 
