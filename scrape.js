@@ -13,13 +13,26 @@ const s3Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
-const VIDEO_URL = `${process.env.AWS_BUCKET_VIDEO_URL}/Podravka+KIKIRIKI+MASLAC+no+audio.mp4`;
 
 
 const locations = [
     'branimir', 'dubrava', 'greengold', 'dvorana', 'hala', 'hob',
     'kaptol', 'mamutica', 'zcentar', 'zavrtnica', 'zonar'
 ];
+
+const locationNames = {
+    'branimir': 'Branimir Mingle Mall',
+    'dubrava': 'Dubrava',
+    'greengold': 'Green Gold Centar ',
+    'dvorana': 'Dvorana',
+    'hala': 'Hala',
+    'hob': 'Hob',
+    'kaptol': 'Kaptol Center',
+    'mamutica': 'Mamicuta',
+    'zcentar': 'Z Centar',
+    'zavrtnica': 'Zavrtnica',
+    'zonar': 'Zonar Hotel'
+}
 
 const scrapeAndUpload = async (location) => {
     console.log(`[${new Date().toISOString()}] Starting process for ${location}`);
@@ -34,9 +47,18 @@ const scrapeAndUpload = async (location) => {
     await page.goto(url, { waitUntil: 'networkidle2' });
     
     console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
-    const cleanedHTML = await page.evaluate((baseUrl, videoUrl) => {
+    const cleanedHTML = await page.evaluate((baseUrl, location, locationNames) => {
         document.querySelectorAll('div.event').forEach(event => {
             const eventName = event.querySelector('p.event_name');
+            event.style.height = '100%';
+            event.style.minHeight = '93px';
+            event.style.marginBottom = '10px';
+            // const eventTime = event.querySelector('span.eventlength');
+            // if (eventTime) eventTime.style.fontSize = '15px';
+            // if (eventName) eventName.style.fontSize = '22px';
+            // const room = event.querySelector('p.room');
+            // if (room) room.style.fontSize = '17px';
+
             if (eventName && eventName.textContent.trim() === 'Padel') {
                 event.remove();
             }
@@ -59,19 +81,31 @@ const scrapeAndUpload = async (location) => {
 
         const innerContainer = document.getElementById('innercontainer');
         if (innerContainer) {
-            const logoDiv = document.createElement('div');
-            logoDiv.style.textAlign = 'center';
-            const logo = document.createElement('img');
-            logo.src = 'https://www.formfactory.cz/timetable/the-fitness-logo.png';
-            logo.style.marginBottom = '20px';
-            logo.style.width = '400px';
-            logo.style.height = 'auto';
-            logo.style.display = 'block';
-            logo.style.marginLeft = 'auto';
-            logo.style.marginRight = 'auto';
-            logoDiv.appendChild(logo);
-            innerContainer.parentNode.insertBefore(logoDiv, innerContainer);
+            // Create location name header instead of logo
+            innerContainer.style.display = 'flex';
+            innerContainer.style.flexDirection = 'column';
+            innerContainer.style.flex = '1';
+
+            const locationDiv = document.createElement('div');
+            locationDiv.style.textAlign = 'center';
+            locationDiv.style.display = 'flex';
+            locationDiv.style.justifyContent = 'center';
+            locationDiv.style.borderBottom = '2px solid white';
+            locationDiv.style.marginBottom = '20px';
+            locationDiv.style.marginLeft = '20px';
+            locationDiv.style.marginRight = '20px';
+
+            const locationName = document.createElement('h1');
+            locationName.textContent = locationNames[location];
+            locationName.style.color = 'white';
+            locationName.style.fontSize = '4.5em';
+            locationName.style.marginBottom = '20px';
+            locationDiv.appendChild(locationName);
+            innerContainer.parentNode.insertBefore(locationDiv, innerContainer);
         }
+
+        const scheduler = document.getElementById('scheduler');
+        if (scheduler) scheduler.style.backgroundColor = 'black';
 
         const calendarHeader = document.querySelector('section.calendar_header h1');
         if (calendarHeader) calendarHeader.style.color = 'white';
@@ -97,43 +131,39 @@ const scrapeAndUpload = async (location) => {
 
         const wideContainer = document.getElementById('widecontainer');
         
+        const calendarHeaderSection = document.querySelector('section.calendar_header');
+        if (calendarHeaderSection) calendarHeaderSection.remove();
+
+        
         if (wideContainer) {
             wideContainer.style.display = 'flex';
             wideContainer.style.flexDirection = 'column';
             wideContainer.style.justifyContent = 'space-between';
             wideContainer.style.minHeight = '100vh';
 
-            const video = document.createElement('video');
-            video.src = videoUrl;
-            video.style.position = 'relative';
-            video.style.marginTop = '20px';
-            video.style.top = 'unset';
-            video.style.left = 'unset';
-            video.style.right = 'unset';
-            video.style.bottom = 'unset';
-            video.style.transform = 'unset';
-            video.style.zIndex = '1';
-            video.style.width = '100%';
-            video.style.height = 'auto';
-            video.style.objectFit = 'cover';
-            video.style.position = 'relative';
-            video.style.paddingLeft = '20px';
-            video.style.paddingRight = '20px';
+            // Create bottom logo
+            const logoContainer = document.createElement('div');
+            logoContainer.style.display = 'flex';
+            logoContainer.style.alignItems = 'flex-end';
+            logoContainer.style.justifyContent = 'center';
+            logoContainer.style.padding = '20px';
+            logoContainer.style.paddingTop = '40px';
+            logoContainer.style.marginLeft = '20px';
+            logoContainer.style.marginRight = '20px';
+            logoContainer.style.borderTop = '2px solid white';
 
-            video.setAttribute('autoplay', 'true');
-            video.setAttribute('loop', 'true');
-            video.setAttribute('muted', 'true');
-            video.setAttribute('playsinline', 'true');
-            video.play().catch(function(error) {
-                console.log("Video play failed:", error);
-            });
-            const videoContainer = document.createElement('div');
-            videoContainer.style.display = 'flex';
-            videoContainer.style.flex = '1';
-            videoContainer.style.alignItems = 'flex-end';
-            videoContainer.appendChild(video);
-            wideContainer.appendChild(videoContainer);
+            const logo = document.createElement('img');
+            logo.src = 'https://www.formfactory.cz/timetable/the-fitness-logo.png';
+            logo.style.width = '400px';
+            logo.style.height = 'auto';
+            logo.style.marginBottom = '20px';
+            
+            logoContainer.appendChild(logo);
+            wideContainer.appendChild(logoContainer);
         }
+
+        const calendarDownerText = document.getElementById('calendar_downer_text');
+        if (calendarDownerText) calendarDownerText.remove();
         
         document.querySelectorAll('script[src]').forEach(script => {
             if (script.getAttribute('src') && script.getAttribute('src').startsWith('/')) {
@@ -153,7 +183,7 @@ const scrapeAndUpload = async (location) => {
         }
         
         return document.documentElement.outerHTML;
-    }, baseUrl, VIDEO_URL);
+    }, baseUrl, location, locationNames);
     
     console.log(`[${new Date().toISOString()}] HTML cleaning completed for ${location}`);
 
