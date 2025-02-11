@@ -52,7 +52,8 @@ const scrapeAndUpload = async (location) => {
             const eventName = event.querySelector('p.event_name');
             event.style.height = '100%';
             event.style.minHeight = '93px';
-            event.style.marginBottom = '10px';
+            event.style.marginBottom = '20px';
+            event.style.marginTop = '10px';
             // const eventTime = event.querySelector('span.eventlength');
             // if (eventTime) eventTime.style.fontSize = '15px';
             // if (eventName) eventName.style.fontSize = '22px';
@@ -89,7 +90,9 @@ const scrapeAndUpload = async (location) => {
             const locationDiv = document.createElement('div');
             locationDiv.style.textAlign = 'center';
             locationDiv.style.display = 'flex';
+            locationDiv.style.flexDirection = 'column';
             locationDiv.style.justifyContent = 'center';
+            locationDiv.style.alignItems = 'center';
             locationDiv.style.borderBottom = '2px solid white';
             locationDiv.style.marginBottom = '20px';
             locationDiv.style.marginLeft = '20px';
@@ -98,14 +101,25 @@ const scrapeAndUpload = async (location) => {
             const locationName = document.createElement('h1');
             locationName.textContent = locationNames[location];
             locationName.style.color = 'white';
-            locationName.style.fontSize = '4.5em';
-            locationName.style.marginBottom = '20px';
+            locationName.style.fontSize = '5em';
+            locationName.style.marginBottom = '10px';
             locationDiv.appendChild(locationName);
+
+            const raspored = document.createElement('h2');
+            raspored.textContent = 'Raspored treninga';
+            raspored.style.color = 'white';
+            raspored.style.fontSize = '3em';
+            raspored.style.marginBottom = '20px';
+            locationDiv.appendChild(raspored);
+
             innerContainer.parentNode.insertBefore(locationDiv, innerContainer);
         }
 
         const scheduler = document.getElementById('scheduler');
-        if (scheduler) scheduler.style.backgroundColor = 'black';
+        if (scheduler) {
+            scheduler.style.backgroundColor = 'black';
+            scheduler.style.marginTop = '20px';
+        }
 
         const calendarHeader = document.querySelector('section.calendar_header h1');
         if (calendarHeader) calendarHeader.style.color = 'white';
