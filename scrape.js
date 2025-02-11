@@ -101,7 +101,7 @@ const scrapeAndUpload = async (location) => {
             const locationName = document.createElement('h1');
             locationName.textContent = locationNames[location];
             locationName.style.color = 'white';
-            locationName.style.fontSize = '5em';
+            locationName.style.fontSize = '6em';
             locationName.style.marginBottom = '10px';
             locationDiv.appendChild(locationName);
 
@@ -109,7 +109,7 @@ const scrapeAndUpload = async (location) => {
             raspored.textContent = 'Raspored treninga';
             raspored.style.color = 'white';
             raspored.style.fontSize = '3em';
-            raspored.style.marginBottom = '20px';
+            raspored.style.marginBottom = '35px';
             locationDiv.appendChild(raspored);
 
             innerContainer.parentNode.insertBefore(locationDiv, innerContainer);
