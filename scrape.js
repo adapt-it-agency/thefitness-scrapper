@@ -21,17 +21,17 @@ const locations = [
 ];
 
 const locationNames = {
-    'branimir': 'Branimir Mingle Mall',
-    'dubrava': 'Dubrava',
-    'greengold': 'Green Gold Centar ',
-    'dvorana': 'Dvorana',
-    'hala': 'Hala',
-    'hob': 'Hob',
-    'kaptol': 'Kaptol Center',
-    'mamutica': 'Mamicuta',
-    'zcentar': 'Z Centar',
-    'zavrtnica': 'Zavrtnica',
-    'zonar': 'Zonar Hotel'
+    'branimir': 'The Fitness Branimir Mingle Mall',
+    'dubrava': 'The Fitness Dubrava',
+    'greengold': 'The Fitness Green Gold Centar ',
+    'dvorana': 'The Fitness Dvorana',
+    'hala': 'The Fitness and Padel Hala',
+    'hob': 'The Fitness Hob',
+    'kaptol': 'The Fitness Kaptol Center',
+    'mamutica': 'The Fitness Mamicuta',
+    'zcentar': 'The Fitness Z Centar',
+    'zavrtnica': 'The Fitness Zavrtnica',
+    'zonar': 'The Fitness Zonar Hotel'
 }
 
 const scrapeAndUpload = async (location) => {
@@ -88,7 +88,6 @@ const scrapeAndUpload = async (location) => {
             innerContainer.style.flex = '1';
 
             const locationDiv = document.createElement('div');
-            locationDiv.style.textAlign = 'center';
             locationDiv.style.display = 'flex';
             locationDiv.style.flexDirection = 'column';
             locationDiv.style.justifyContent = 'center';
@@ -103,6 +102,8 @@ const scrapeAndUpload = async (location) => {
             locationName.style.color = 'white';
             locationName.style.fontSize = '6em';
             locationName.style.marginBottom = '10px';
+            locationName.style.textAlign = 'center';
+            locationName.setAttribute('style', 'text-align: center !important; color: white; font-size: 6em; margin-bottom: 10px;');
             locationDiv.appendChild(locationName);
 
             const raspored = document.createElement('h2');
