@@ -28,7 +28,7 @@ const locationNames = {
     'hala': 'The Fitness and Padel Hala',
     'hob': 'The Fitness Hob',
     'kaptol': 'The Fitness Kaptol Center',
-    'mamutica': 'The Fitness Mamicuta',
+    'mamutica': 'The Fitness Mamutica',
     'zcentar': 'The Fitness Z Centar',
     'zavrtnica': 'The Fitness Zavrtnica',
     'zonar': 'The Fitness Zonar Hotel'
