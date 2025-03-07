@@ -48,17 +48,30 @@ const scrapeAndUpload = async (location) => {
     
     console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
     const cleanedHTML = await page.evaluate((baseUrl, location, locationNames) => {
+        // Remove last two columns from calendar table
+        const calendarTable = document.querySelector('.calendar_table');
+        if (calendarTable) {
+            const rows = calendarTable.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td, th');
+                if (cells.length >= 2) {
+                    cells[cells.length - 1].remove(); // Remove last column
+                    cells[cells.length - 2].remove(); // Remove second to last column
+                }
+            });
+        }
+
         document.querySelectorAll('div.event').forEach(event => {
             const eventName = event.querySelector('p.event_name');
             event.style.height = '100%';
-            event.style.minHeight = '93px';
+            event.style.minHeight = '130px';
             event.style.marginBottom = '20px';
             event.style.marginTop = '10px';
-            // const eventTime = event.querySelector('span.eventlength');
-            // if (eventTime) eventTime.style.fontSize = '15px';
-            // if (eventName) eventName.style.fontSize = '22px';
-            // const room = event.querySelector('p.room');
-            // if (room) room.style.fontSize = '17px';
+            const eventTime = event.querySelector('span.eventlength');
+            if (eventTime) eventTime.style.fontSize = '17px';
+            if (eventName) eventName.style.fontSize = '22px';
+            const room = event.querySelector('p.room');
+            if (room) room.style.fontSize = '18px';
 
             if (eventName && eventName.textContent.trim() === 'Padel') {
                 event.remove();
