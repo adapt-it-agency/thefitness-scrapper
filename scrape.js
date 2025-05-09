@@ -240,12 +240,71 @@ const scrapeAndUpload = async (location) => {
 };
 
 // Schedule to run every 30 minutes
-cron.schedule('*/30 * * * *', () => {
+cron.schedule('5/30 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for all ${locations.length} locations...`);
-    locations.forEach(location => scrapeAndUpload(location));
+    console.log(`[${new Date().toISOString()}] Running scraper for branimir location...`);
+    scrapeAndUpload('branimir')
+});
+
+cron.schedule('10/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for dubrava location...`);
+    scrapeAndUpload('dubrava')
+});
+
+cron.schedule('15/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for greengold location...`);
+    scrapeAndUpload('greengold')
+});
+
+cron.schedule('20/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for hala location...`);
+    scrapeAndUpload('hala')
+});
+
+cron.schedule('25/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for dvorana location...`);
+    scrapeAndUpload('dvorana')
+});
+
+cron.schedule('30/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for hob location...`);
+    scrapeAndUpload('hob')
+});
+
+cron.schedule('35/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for kaptol location...`);
+    scrapeAndUpload('kaptol')
+});
+
+cron.schedule('40/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for mamutica location...`);
+    scrapeAndUpload('mamutica')
+});
+
+cron.schedule('45/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for zcentar location...`);
+    scrapeAndUpload('zcentar')
+});
+
+cron.schedule('50/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for zavrtnica location...`);
+    scrapeAndUpload('zavrtnica')
+});
+
+cron.schedule('55/30 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for zonar location...`);
+    scrapeAndUpload('zonar')
 });
 
 // Run once on startup
-console.log(`[${new Date().toISOString()}] 🚀 Initial startup - processing ${locations.length} locations`);
-locations.forEach(location => scrapeAndUpload(location));
+console.log(`[${new Date().toISOString()}] 🚀 Initial startup`);
