@@ -72,6 +72,8 @@ const scrapeAndUpload = async (location) => {
             const eventTime = event.querySelector('span.eventlength');
             if (eventTime) eventTime.style.fontSize = '17px';
             if (eventName) eventName.style.fontSize = '22px';
+            if (eventName.textContent.toUpperCase().trim() === 'FATBURNING CONDITIONING') eventName.style.fontSize = '18px';
+            if (eventName.textContent.toUpperCase().trim() === 'BODYWEIGHT') eventName.style.fontSize = '21px';
             const room = event.querySelector('p.room');
             if (room) room.style.fontSize = '18px';
 
