@@ -310,3 +310,8 @@ cron.schedule('55 * * * *', () => {
 
 // Run once on startup
 console.log(`[${new Date().toISOString()}] 🚀 Initial startup`);
+
+scrapeAndUpload('hala')
+setTimeout(() => {
+    scrapeAndUpload('hob')
+}, 10000)
