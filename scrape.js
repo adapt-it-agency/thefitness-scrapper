@@ -56,7 +56,9 @@ const scrapeAndUpload = async (location) => {
                 const cells = row.querySelectorAll('td, th');
                 if (cells.length >= 2) {
                     cells[cells.length - 1].remove(); // Remove last column
-                    cells[cells.length - 2].remove(); // Remove second to last column
+                    if(location !== 'hala' && location !== 'hob') {
+                        cells[cells.length - 2].remove(); // Remove second to last column
+                    }
                 }
             });
         }
