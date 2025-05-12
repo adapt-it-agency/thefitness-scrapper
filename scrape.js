@@ -2,6 +2,9 @@ const puppeteer = require('puppeteer');
 const cron = require('node-cron');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 require('dotenv').config()
+const cronitor = require('cronitor')(process.env.CRONITOR_API_KEY);
+
+cronitor.wraps(cron);
 
 // Configure AWS S3 client
 const s3Client = new S3Client({
@@ -13,12 +16,6 @@ const s3Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
-
-
-const locations = [
-    'branimir', 'dubrava', 'greengold', 'dvorana', 'hala', 'hob',
-    'kaptol', 'mamutica', 'zcentar', 'zavrtnica', 'zonar'
-];
 
 const locationNames = {
     'branimir': 'The Fitness Branimir Mingle Mall',
@@ -242,67 +239,67 @@ const scrapeAndUpload = async (location) => {
 };
 
 // Schedule to run every 30 minutes
-cron.schedule('5 * * * *', () => {
+cronitor.schedule("Branimir", '5 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for branimir location...`);
     scrapeAndUpload('branimir')
 });
 
-cron.schedule('10 * * * *', () => {
+cronitor.schedule("Dubrava", '10 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for dubrava location...`);
     scrapeAndUpload('dubrava')
 });
 
-cron.schedule('15 * * * *', () => {
+cronitor.schedule("Green Gold", '15 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for greengold location...`);
     scrapeAndUpload('greengold')
 });
 
-cron.schedule('20 * * * *', () => {
+cronitor.schedule("Hala", '20 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for hala location...`);
     scrapeAndUpload('hala')
 });
 
-cron.schedule('25 * * * *', () => {
+cronitor.schedule("Dvorana", '25 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for dvorana location...`);
     scrapeAndUpload('dvorana')
 });
 
-cron.schedule('30 * * * *', () => {
+cronitor.schedule("Hob", '30 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for hob location...`);
     scrapeAndUpload('hob')
 });
 
-cron.schedule('35 * * * *', () => {
+cronitor.schedule("Kaptol", '35 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for kaptol location...`);
     scrapeAndUpload('kaptol')
 });
 
-cron.schedule('40 * * * *', () => {
+cronitor.schedule("Mamutica", '40 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for mamutica location...`);
     scrapeAndUpload('mamutica')
 });
 
-cron.schedule('45 * * * *', () => {
+cronitor.schedule("Z Centar", '45 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for zcentar location...`);
     scrapeAndUpload('zcentar')
 });
 
-cron.schedule('50 * * * *', () => {
+cronitor.schedule("Zavrtnica", '50 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for zavrtnica location...`);
     scrapeAndUpload('zavrtnica')
 });
 
-cron.schedule('55 * * * *', () => {
+cronitor.schedule("Zonar", '55 * * * *', () => {
     console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
     console.log(`[${new Date().toISOString()}] Running scraper for zonar location...`);
     scrapeAndUpload('zonar')
