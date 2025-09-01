@@ -28,7 +28,10 @@ const locationNames = {
     'mamutica': 'The Fitness Mamutica',
     'zcentar': 'The Fitness Z Centar',
     'zavrtnica': 'The Fitness Zavrtnica',
-    'zonar': 'The Fitness Zonar Hotel'
+    'zonar': 'The Fitness Zonar Hotel',
+    'lucko': 'The Fitness Lučko',
+    'jelkovec': 'The Fitness Jelkovec',
+    'hotelnovi': 'The Fitness Hotel Novi',
 }
 
 const scrapeAndUpload = async (location) => {
@@ -304,6 +307,25 @@ cronitor.schedule("Zonar", '55 * * * *', () => {
     console.log(`[${new Date().toISOString()}] Running scraper for zonar location...`);
     scrapeAndUpload('zonar')
 });
+
+cronitor.schedule("Lucko", '43 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for lucko location...`);
+    scrapeAndUpload('lucko')
+});
+
+cronitor.schedule("Jelkovec", '28 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for jelkovec location...`);
+    scrapeAndUpload('jelkovec')
+});
+
+cronitor.schedule("Hotel Novi", '13 * * * *', () => {
+    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
+    console.log(`[${new Date().toISOString()}] Running scraper for hotelnovi location...`);
+    scrapeAndUpload('hotelnovi')
+});
+
 
 // Run once on startup
 console.log(`[${new Date().toISOString()}] 🚀 Initial startup`);
