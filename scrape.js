@@ -98,8 +98,10 @@ const scrapeAndUpload = async (location) => {
             timeout: 30000 
         });
         
-        // Small delay to ensure DOM is fully ready
-        await page.waitForTimeout(1000);
+        // Wait for calendar table to ensure DOM is fully ready
+        await page.waitForSelector('.calendar_table', { timeout: 10000 }).catch(() => {
+            console.log(`[${new Date().toISOString()}] Calendar table not found, continuing anyway...`);
+        });
     
         console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
         const cleanedHTML = await page.evaluate((baseUrl, location, locationNames) => {
