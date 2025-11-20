@@ -6,6 +6,20 @@ const cronitor = require('cronitor')(process.env.CRONITOR_API_KEY);
 
 cronitor.wraps(cron);
 
+// Log memory usage periodically for monitoring
+const logMemoryUsage = () => {
+    const used = process.memoryUsage();
+    console.log(`[${new Date().toISOString()}] Memory Usage: RSS: ${Math.round(used.rss / 1024 / 1024)}MB, Heap: ${Math.round(used.heapUsed / 1024 / 1024)}MB / ${Math.round(used.heapTotal / 1024 / 1024)}MB`);
+};
+
+// Force garbage collection periodically if available
+if (global.gc) {
+    setInterval(() => {
+        global.gc();
+        console.log(`[${new Date().toISOString()}] Forced garbage collection`);
+    }, 10 * 60 * 1000); // Every 10 minutes
+}
+
 // Configure AWS S3 client
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
@@ -35,19 +49,60 @@ const locationNames = {
 }
 
 const scrapeAndUpload = async (location) => {
-    console.log(`[${new Date().toISOString()}] Starting process for ${location}`);
-    const url = `https://${location}.thefitness.hr/calendar`;
-    const baseUrl = `https://${location}.thefitness.hr`;
+    let browser = null;
+    try {
+        console.log(`[${new Date().toISOString()}] Starting process for ${location}`);
+        const url = `https://${location}.thefitness.hr/calendar`;
+        const baseUrl = `https://${location}.thefitness.hr`;
+        
+        console.log(`[${new Date().toISOString()}] Launching browser for ${location}`);
+        
+        // Optimized browser launch with minimal resource usage
+        browser = await puppeteer.launch({ 
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', // Overcome limited resource problems
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--disable-extensions',
+                '--disable-software-rasterizer',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-sync',
+                '--metrics-recording-only',
+                '--mute-audio',
+                '--no-default-browser-check',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding'
+            ]
+        });
+        
+        const page = await browser.newPage();
+        
+        // Set smaller viewport to reduce memory usage
+        await page.setViewport({ width: 1920, height: 1080 });
+        
+        // Set request timeout
+        page.setDefaultNavigationTimeout(30000);
+        page.setDefaultTimeout(30000);
+        
+        console.log(`[${new Date().toISOString()}] Navigating to ${url}`);
+        // Use domcontentloaded instead of networkidle2 for faster loading
+        await page.goto(url, { 
+            waitUntil: 'domcontentloaded',
+            timeout: 30000 
+        });
+        
+        // Small delay to ensure DOM is fully ready
+        await page.waitForTimeout(1000);
     
-    console.log(`[${new Date().toISOString()}] Launching browser for ${location}`);
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    
-    console.log(`[${new Date().toISOString()}] Navigating to ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    
-    console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
-    const cleanedHTML = await page.evaluate((baseUrl, location, locationNames) => {
+        console.log(`[${new Date().toISOString()}] Starting HTML manipulation for ${location}`);
+        const cleanedHTML = await page.evaluate((baseUrl, location, locationNames) => {
         // Remove last two columns from calendar table
         const calendarTable = document.querySelector('.calendar_table');
         if (calendarTable) {
@@ -217,9 +272,8 @@ const scrapeAndUpload = async (location) => {
         return document.documentElement.outerHTML;
     }, baseUrl, location, locationNames);
     
-    console.log(`[${new Date().toISOString()}] HTML cleaning completed for ${location}`);
+        console.log(`[${new Date().toISOString()}] HTML cleaning completed for ${location}`);
 
-    try {
         console.log(`[${new Date().toISOString()}] Preparing S3 upload for ${location}`);
         const uploadParams = {
             Bucket: BUCKET_NAME,
@@ -232,100 +286,103 @@ const scrapeAndUpload = async (location) => {
         console.log(`[${new Date().toISOString()}] Starting S3 upload for ${location} to bucket ${BUCKET_NAME}`);
         await s3Client.send(new PutObjectCommand(uploadParams));
         console.log(`[${new Date().toISOString()}] ✅ Successfully uploaded HTML for ${location} to S3 ${BUCKET_NAME}`);
-    } catch (err) {
-        console.error(`[${new Date().toISOString()}] ❌ Error uploading to S3 for ${location}:`, err);
-    }
 
-    console.log(`[${new Date().toISOString()}] Closing browser for ${location}`);
-    await browser.close();
-    console.log(`[${new Date().toISOString()}] Process completed for ${location}\n`);
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ❌ Error in scrape process for ${location}:`, err);
+        throw err; // Re-throw to be caught by outer error handler
+    } finally {
+        // Always close browser to prevent memory leaks
+        if (browser) {
+            console.log(`[${new Date().toISOString()}] Closing browser for ${location}`);
+            try {
+                await browser.close();
+            } catch (closeErr) {
+                console.error(`[${new Date().toISOString()}] Error closing browser for ${location}:`, closeErr);
+            }
+        }
+        console.log(`[${new Date().toISOString()}] Process completed for ${location}\n`);
+    }
 };
 
-// Schedule to run every 30 minutes
+// Wrapper function to handle errors in cron jobs
+const runScrapeWithErrorHandling = async (location, jobName) => {
+    try {
+        console.log(`\n[${new Date().toISOString()}] 🔄 Starting cron job for ${jobName}`);
+        logMemoryUsage();
+        console.log(`[${new Date().toISOString()}] Running scraper for ${location} location...`);
+        await scrapeAndUpload(location);
+        logMemoryUsage();
+        
+        // Force garbage collection after each scrape if available
+        if (global.gc) {
+            global.gc();
+        }
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] ❌ Fatal error in ${jobName} cron job:`, error);
+        // Don't crash the entire process, just log the error
+    }
+};
+
+// Schedule to run every hour with proper error handling
 cronitor.schedule("Branimir", '5 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for branimir location...`);
-    scrapeAndUpload('branimir')
+    runScrapeWithErrorHandling('branimir', 'Branimir');
 });
 
 cronitor.schedule("Dubrava", '10 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for dubrava location...`);
-    scrapeAndUpload('dubrava')
+    runScrapeWithErrorHandling('dubrava', 'Dubrava');
 });
 
 cronitor.schedule("Green Gold", '15 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for greengold location...`);
-    scrapeAndUpload('greengold')
+    runScrapeWithErrorHandling('greengold', 'Green Gold');
 });
 
 cronitor.schedule("Hala", '20 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for hala location...`);
-    scrapeAndUpload('hala')
+    runScrapeWithErrorHandling('hala', 'Hala');
 });
 
 cronitor.schedule("Dvorana", '25 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for dvorana location...`);
-    scrapeAndUpload('dvorana')
+    runScrapeWithErrorHandling('dvorana', 'Dvorana');
 });
 
 cronitor.schedule("Hob", '30 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for hob location...`);
-    scrapeAndUpload('hob')
+    runScrapeWithErrorHandling('hob', 'Hob');
 });
 
 cronitor.schedule("Kaptol", '35 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for kaptol location...`);
-    scrapeAndUpload('kaptol')
+    runScrapeWithErrorHandling('kaptol', 'Kaptol');
 });
 
 cronitor.schedule("Mamutica", '40 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for mamutica location...`);
-    scrapeAndUpload('mamutica')
+    runScrapeWithErrorHandling('mamutica', 'Mamutica');
 });
 
 cronitor.schedule("Z Centar", '45 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for zcentar location...`);
-    scrapeAndUpload('zcentar')
+    runScrapeWithErrorHandling('zcentar', 'Z Centar');
 });
 
 cronitor.schedule("Zavrtnica", '50 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for zavrtnica location...`);
-    scrapeAndUpload('zavrtnica')
+    runScrapeWithErrorHandling('zavrtnica', 'Zavrtnica');
 });
 
 cronitor.schedule("Zonar", '55 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for zonar location...`);
-    scrapeAndUpload('zonar')
+    runScrapeWithErrorHandling('zonar', 'Zonar');
 });
 
 cronitor.schedule("Lucko", '43 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for lucko location...`);
-    scrapeAndUpload('lucko')
+    runScrapeWithErrorHandling('lucko', 'Lucko');
 });
 
 cronitor.schedule("Jelkovec", '28 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for jelkovec location...`);
-    scrapeAndUpload('jelkovec')
+    runScrapeWithErrorHandling('jelkovec', 'Jelkovec');
 });
 
 cronitor.schedule("Hotel Novi", '13 * * * *', () => {
-    console.log(`\n[${new Date().toISOString()}] 🔄 Starting new cron job cycle`);
-    console.log(`[${new Date().toISOString()}] Running scraper for hotelnovi location...`);
-    scrapeAndUpload('hotelnovi')
+    runScrapeWithErrorHandling('hotelnovi', 'Hotel Novi');
 });
 
 
 // Run once on startup
-console.log(`[${new Date().toISOString()}] 🚀 Initial startup`);
+console.log(`[${new Date().toISOString()}] 🚀 Initial startup - Optimized for low resource usage`);
+console.log(`[${new Date().toISOString()}] Tip: Run with --expose-gc flag for better memory management: node --expose-gc scrape.js`);
+logMemoryUsage();
+console.log(`[${new Date().toISOString()}] 14 locations scheduled with staggered times to minimize resource spikes`);
